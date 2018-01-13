@@ -16,6 +16,10 @@ type Message struct {
 		BuildingTime int    `json:"build_time_millis"`
 		Branch       string `json:"branch"`
 		Status       string `json:"status"`
+		Commit       string `json:"subject"`
+		BuildNumber  int    `json:"build_num"`
+		VCSUrl       string `json:"vcs_url"`
+		VCSRevision  string `json:"vcs_revision"`
 	}
 }
 
@@ -75,7 +79,9 @@ func handleCircleHook(rw http.ResponseWriter, req *http.Request) {
 		statusIcon = "\xE2\x9D\x8C"
 	}
 
-	text := fmt.Sprintf("%s Build %s %s pushed commit to %s\n Build time: %d seconds", statusIcon, p.Status, p.CommiterName, p.Branch, p.BuildingTime/1000)
+	text := fmt.Sprintf("%s in build #%d of %s (%s) \n- %s: %s (%s) \nBuild time: %d seconds",
+		statusIcon, p.BuildNumber, p.VCSUrl[8:], p.Branch, p.CommiterName,
+		p.Commit, p.VCSRevision[:7], p.BuildingTime/1000)
 	chatID, err := strconv.ParseInt(os.Getenv("CHAT_ID"), 10, 64)
 	bot.Send(tgbotapi.NewMessage(chatID, text))
 }
