@@ -1,0 +1,17 @@
+{
+	"ImportPath": "github.com/circleci-bot",
+	"GoVersion": "go1.9",
+	"GodepVersion": "v79",
+	"Deps": [
+		{
+			"ImportPath": "github.com/Syfaro/telegram-bot-api",
+			"Comment": "v4.6.1-4-gaf15ab1",
+			"Rev": "af15ab1ca783ca2dcf56f087587f1d4f48185c0b"
+		},
+		{
+			"ImportPath": "github.com/technoweenie/multipartstreamer",
+			"Comment": "v1.0.1",
+			"Rev": "a90a01d73ae432e2611d178c18367fbaa13e0154"
+		}
+	]
+}

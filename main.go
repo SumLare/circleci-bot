@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strconv"
 )
 
 type Message struct {
@@ -21,8 +22,11 @@ type Message struct {
 func main() {
 	http.HandleFunc("/hooks/circle", handleCircleHook)
 
-	log.Printf("Starting server on 8081 port")
-	log.Fatal(http.ListenAndServe(":8081", nil))
+	port := ":" + os.Getenv("PORT")
+	log.Printf("Listening on %s...\n", port)
+	if err := http.ListenAndServe(port, nil); err != nil {
+		panic(err)
+	}
 
 	handleMessages()
 }
@@ -68,5 +72,6 @@ func handleCircleHook(rw http.ResponseWriter, req *http.Request) {
 	p := m.Payload
 	text := fmt.Sprintf("✅  Build %s %s pushed commit to %s\n Build time: %d seconds", p.Status, p.CommiterName, p.Branch, p.BuildingTime/1000)
 
-	bot.Send(tgbotapi.NewMessage(os.Getenv("CHAT_ID"), text))
+	chatID, err := strconv.ParseInt(os.Getenv("CHAT_ID"), 10, 64)
+	bot.Send(tgbotapi.NewMessage(chatID, text))
 }
