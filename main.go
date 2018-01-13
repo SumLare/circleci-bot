@@ -65,13 +65,17 @@ func handleCircleHook(rw http.ResponseWriter, req *http.Request) {
 
 	var m Message
 	err = json.NewDecoder(req.Body).Decode(&m)
-
 	if err != nil {
 		log.Println(err)
 	}
-	p := m.Payload
-	text := fmt.Sprintf("✅  Build %s %s pushed commit to %s\n Build time: %d seconds", p.Status, p.CommiterName, p.Branch, p.BuildingTime/1000)
 
+	p := m.Payload
+	statusIcon := "\xE2\x9C\x85"
+	if p.Status == "failed" {
+		statusIcon = "\xE2\x9D\x8C"
+	}
+
+	text := fmt.Sprintf("%s Build %s %s pushed commit to %s\n Build time: %d seconds", statusIcon, p.Status, p.CommiterName, p.Branch, p.BuildingTime/1000)
 	chatID, err := strconv.ParseInt(os.Getenv("CHAT_ID"), 10, 64)
 	bot.Send(tgbotapi.NewMessage(chatID, text))
 }
