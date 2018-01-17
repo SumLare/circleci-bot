@@ -34,7 +34,6 @@ func main() {
 	if err := http.ListenAndServe(port, nil); err != nil {
 		log.Println(err)
 	}
-
 	handleMessages()
 }
 
@@ -64,12 +63,12 @@ func handleMessages() {
 		log.Printf("[%s] %s", update.Message.From.UserName, update.Message.Text)
 
 		chatID := update.Message.Chat.ID
+		key, _ := generateKey()
 		switch update.Message.Command() {
 		case "start":
 			reply = "CircleCI Bot helps track your build status"
 		case "add":
-			key, _ := newUUID()
-			c.Do("APPEND", chatID, key)
+			c.Do("APPEND", key, chatID)
 			reply = "Your circleci key is " + key
 		}
 
@@ -79,23 +78,31 @@ func handleMessages() {
 }
 
 func payloadHandler(rw http.ResponseWriter, req *http.Request) {
-	if r.Method != "POST" {
-		w.WriteHeader(http.StatusMethodNotAllowed)
+	if req.Method != "POST" {
+		rw.WriteHeader(http.StatusMethodNotAllowed)
 		return
 	}
 
 	var m Message
 	err := json.NewDecoder(req.Body).Decode(&m)
 	if err != nil {
-		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-		w.WriteHeader(http.StatusBadRequest)
+		rw.Header().Set("Content-Type", "application/json; charset=UTF-8")
+		rw.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
-	sendMessage(m)
+	c, err := redis.DialURL(os.Getenv("REDIS_URL"))
+	if err != nil {
+		log.Println(err)
+	}
+	defer c.Close()
+
+	value, _ := c.Do("GET", req.URL.Query()["circleci_key"][0])
+	chatID, _ := strconv.ParseInt(string(value.([]uint8)), 10, 64)
+	sendMessage(m, chatID)
 }
 
-func sendMessage(m Message) {
+func sendMessage(m Message, chatID int64) {
 	bot, err := tgbotapi.NewBotAPI(os.Getenv("BOT_TOKEN"))
 	if err != nil {
 		log.Println(err)
@@ -110,17 +117,16 @@ func sendMessage(m Message) {
 	text := fmt.Sprintf("%s in build #%d of %s (%s) \n- %s: %s (%s) \nBuild time: %d seconds",
 		statusIcon, p.BuildNumber, p.VCSUrl[8:], p.Branch, p.CommiterName,
 		p.Commit, p.VCSRevision[:7], p.BuildingTime/1000)
-	chatID, err := strconv.ParseInt(os.Getenv("CHAT_ID"), 10, 64)
 	bot.Send(tgbotapi.NewMessage(chatID, text))
 }
 
-func newUUID() (string, error) {
-	uuid := make([]byte, 16)
-	n, err := io.ReadFull(rand.Reader, uuid)
-	if n != len(uuid) || err != nil {
+func generateKey() (string, error) {
+	key := make([]byte, 16)
+	n, err := io.ReadFull(rand.Reader, key)
+	if n != len(key) || err != nil {
 		return "", err
 	}
-	uuid[8] = uuid[8]&^0xc0 | 0x80
-	uuid[6] = uuid[6]&^0xf0 | 0x40
-	return fmt.Sprintf("%x-%x-%x-%x-%x", uuid[0:4], uuid[4:6], uuid[6:8], uuid[8:10], uuid[10:]), nil
+	key[8] = key[8]&^0xc0 | 0x80
+	key[6] = key[6]&^0xf0 | 0x40
+	return fmt.Sprintf("%x-%x-%x-%x-%x", key[0:4], key[4:6], key[6:8], key[8:10], key[10:]), nil
 }
