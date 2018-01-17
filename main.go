@@ -31,9 +31,12 @@ func main() {
 
 	port := ":" + os.Getenv("PORT")
 	log.Printf("Listening on %s...\n", port)
-	if err := http.ListenAndServe(port, nil); err != nil {
-		log.Println(err)
-	}
+	go func() {
+		if err := http.ListenAndServe(port, nil); err != nil {
+			log.Println(err)
+		}
+	}()
+
 	handleMessages()
 }
 
