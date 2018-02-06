@@ -26,6 +26,8 @@ type Message struct {
 	}
 }
 
+var bot, _ = tgbotapi.NewBotAPI(os.Getenv("BOT_TOKEN"))
+
 func main() {
 	http.HandleFunc("/hooks/circle", payloadHandler)
 
@@ -41,10 +43,8 @@ func main() {
 }
 
 func handleMessages() {
-	bot, err := tgbotapi.NewBotAPI(os.Getenv("BOT_TOKEN"))
-	if err != nil {
-		log.Println(err)
-	}
+	u := tgbotapi.NewUpdate(0)
+	u.Timeout = 60
 
 	c, err := redis.DialURL(os.Getenv("REDIS_URL"))
 	if err != nil {
@@ -52,10 +52,7 @@ func handleMessages() {
 	}
 	defer c.Close()
 
-	u := tgbotapi.NewUpdate(0)
-	u.Timeout = 60
-
-	updates, err := bot.GetUpdatesChan(u)
+	updates, _ := bot.GetUpdatesChan(u)
 
 	for update := range updates {
 		reply := "Don't text me"
@@ -106,11 +103,6 @@ func payloadHandler(rw http.ResponseWriter, req *http.Request) {
 }
 
 func sendMessage(m Message, chatID int64) {
-	bot, err := tgbotapi.NewBotAPI(os.Getenv("BOT_TOKEN"))
-	if err != nil {
-		log.Println(err)
-	}
-
 	p := m.Payload
 	statusIcon := "\xE2\x9C\x85"
 	if p.Status == "failed" {
