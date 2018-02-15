@@ -21,6 +21,7 @@ type Message struct {
 		Status       string `json:"status"`
 		Commit       string `json:"subject"`
 		BuildNumber  int    `json:"build_num"`
+		BuildUrl     string `json: "build_url"`
 		VCSUrl       string `json:"vcs_url"`
 		VCSRevision  string `json:"vcs_revision"`
 	}
@@ -109,9 +110,9 @@ func sendMessage(m Message, chatID int64) {
 		statusIcon = "\xE2\x9D\x8C"
 	}
 
-	text := fmt.Sprintf("%s in build #%d of %s (%s) \n- %s: %s (%s) \nBuild time: %d seconds",
+	text := fmt.Sprintf("%s in build #%d of %s (%s) \n- %s: %s (%s) \nBuild time: %d seconds\nBuild url: %s",
 		statusIcon, p.BuildNumber, p.VCSUrl[8:], p.Branch, p.CommiterName,
-		p.Commit, p.VCSRevision[:7], p.BuildingTime/1000)
+		p.Commit, p.VCSRevision[:7], p.BuildingTime/1000, p.BuildUrl)
 	bot.Send(tgbotapi.NewMessage(chatID, text))
 }
 
