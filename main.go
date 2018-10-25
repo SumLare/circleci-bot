@@ -4,13 +4,14 @@ import (
 	"crypto/rand"
 	"encoding/json"
 	"fmt"
-	"github.com/Syfaro/telegram-bot-api"
-	"github.com/garyburd/redigo/redis"
 	"io"
 	"log"
 	"net/http"
 	"os"
 	"strconv"
+
+	"github.com/Syfaro/telegram-bot-api"
+	"github.com/garyburd/redigo/redis"
 )
 
 type Message struct {
